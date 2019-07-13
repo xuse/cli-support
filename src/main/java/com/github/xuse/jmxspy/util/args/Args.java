@@ -1,6 +1,7 @@
 package com.github.xuse.jmxspy.util.args;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -8,15 +9,68 @@ import java.util.Map;
 
 import com.github.xuse.jmxspy.util.StringUtils;
 
+/**
+ * 参数解析与提供
+ * 
+ * @author Joey
+ *
+ */
 public class Args {
-
+	/**
+	 * 有名称的参数
+	 */
 	private Map<String, String> argMap = new HashMap<String, String>();
+	/**
+	 * 无名称的参数
+	 */
 	private List<String> defaultArgs = new ArrayList<>();
+	/**
+	 * 原始参数
+	 */
 	private String[] args;
+	/**
+	 * 第一个无名参数作为命令看待（不作为是参数）
+	 */
+	private boolean firstArgAsCmd;
+
+	/**
+	 * 是否有参数
+	 * 
+	 * @return
+	 */
+	public boolean isArgEmpty() {
+		return argMap.isEmpty() && defaultArgs.size() <= (firstArgAsCmd ? 1 : 0);
+	}
+
+	/**
+	 * 无名参数个数
+	 * 
+	 * @return
+	 */
+	public int getAnonymousArgCount() {
+		return defaultArgs.size() - (firstArgAsCmd ? 1 : 0);
+	}
+
+	/**
+	 * 有名参数个数
+	 * 
+	 * @return
+	 */
+	public int getNamedArgCount() {
+		return argMap.size();
+	}
+
+	public Args(String[] args, boolean firstAsCmd) {
+		this.args = args;
+		this.firstArgAsCmd = firstAsCmd;
+		initArg();
+		if (firstAsCmd && defaultArgs.isEmpty()) {
+			throw new IllegalArgumentException("No command found.");
+		}
+	}
 
 	public Args(String[] args) {
-		this.args = args;
-		initArg();
+		this(args, false);
 	}
 
 	/**
@@ -42,14 +96,26 @@ public class Args {
 	 * @param defaultValue
 	 * @return
 	 */
+	public String get(int key, String defaultValue) {
+		return defaultArgs.size() > key ? defaultArgs.get(key) : defaultValue;
+	}
+
+	/**
+	 * 获得参数
+	 * 
+	 * @param key
+	 * @param defaultValue
+	 * @return
+	 */
 	public String get(String key, String defaultValue) {
 		String value = argMap.get(key);
-		return value == null ? defaultValue : value;
+		return StringUtils.isEmpty(value) ? defaultValue : value;
 	}
 
 	/**
 	 * 获得参数，如果传入的是一个单词，那么还会检索首字母的缩写配置
-	 * @deprecated
+	 * 
+	 * @deprecated use {@link #get(String)}
 	 * @param key
 	 * @param defaultValue
 	 * @return
@@ -65,26 +131,19 @@ public class Args {
 
 	/**
 	 * 获得默认参数
-	 * @deprecated
-	 * @return
-	 */
-	public String getFirstDefault() {
-		return defaultArgs.isEmpty() ? null : defaultArgs.get(0);
-	}
-
-	/**
-	 * 获得默认参数
-	 * @deprecated
+	 * 
+	 * @deprecated use {@link #get(int)}
 	 * @param index
 	 * @return
 	 */
 	public String getDefault(int index) {
-		return defaultArgs.size() > index ? defaultArgs.get(index) : null;
+		return defaultArgs.size() > index ? defaultArgs.get(index) : "";
 	}
 
 	/**
 	 * 获得缺省参数
 	 * 
+	 * @deprecated use {@link #get(int)}
 	 * @param index
 	 * @param msg
 	 * @return
@@ -101,6 +160,7 @@ public class Args {
 	/**
 	 * 获得参数，如果没有则抛出一异常
 	 * 
+	 * @deprecated use {@link #get(String)}
 	 * @param key
 	 * @param msg
 	 * @return
@@ -117,6 +177,7 @@ public class Args {
 	/**
 	 * 获得参数，如果为空也返回默认值
 	 * 
+	 * @deprecated use {@link #get(String)}
 	 * @param key
 	 * @param defaultValue
 	 * @return
@@ -128,6 +189,7 @@ public class Args {
 
 	/**
 	 * 获得Int类型参数，支持缩写
+	 * 
 	 * @deprecated
 	 * @param key
 	 * @param defaultValue
@@ -149,21 +211,24 @@ public class Args {
 		}
 	}
 
-	public class AbbrevArg<T extends AbstractArg> {
+	public class AbbrevArg<T extends AbstractArg<T>> {
 		private String key;
 		private T rawArg;
 
 		/**
 		 * 直接获得参数
+		 * 
 		 * @return
 		 */
 		public T get() {
-			rawArg.set(argMap.get(key));
+			String value = argMap.get(key);
+			rawArg.set(value == null ? "" : value);
 			return rawArg;
 		}
 
 		/**
 		 * 支持按首字母缩写获取参数
+		 * 
 		 * @return
 		 */
 		public T abbrev() {
@@ -172,7 +237,7 @@ public class Args {
 				String firstChar = key.substring(0, 1);
 				value = argMap.get(firstChar);
 			}
-			rawArg.set(value);
+			rawArg.set(value == null ? "" : value);
 			return rawArg;
 		}
 
@@ -184,18 +249,20 @@ public class Args {
 
 	/**
 	 * 得到整数值
+	 * 
 	 * @param key
 	 * @return
 	 */
 	public IntValue getInt(int key) {
-		String value=defaultArgs.size()>key? defaultArgs.get(key):null;
-		IntValue i=new IntValue();
+		String value = defaultArgs.size() > key ? defaultArgs.get(key) : "";
+		IntValue i = new IntValue();
 		i.set(value);
 		return i;
 	}
 
 	/**
 	 * 得到整数值
+	 * 
 	 * @param key
 	 * @return
 	 */
@@ -205,18 +272,20 @@ public class Args {
 
 	/**
 	 * 得到字符串值
+	 * 
 	 * @param key
 	 * @return
 	 */
 	public StringValue get(int key) {
-		String value=defaultArgs.size()>key? defaultArgs.get(key):null;
-		StringValue i=new StringValue();
+		String value = defaultArgs.size() > key ? defaultArgs.get(key) : "";
+		StringValue i = new StringValue();
 		i.set(value);
 		return i;
 	}
 
 	/**
 	 * 得到字符串值
+	 * 
 	 * @param key
 	 * @return
 	 */
@@ -226,18 +295,20 @@ public class Args {
 
 	/**
 	 * 得到布尔值
+	 * 
 	 * @param key
 	 * @return
 	 */
 	public BooleanValue getBoolean(int key) {
-		String value=defaultArgs.size()>key? defaultArgs.get(key):null;
-		BooleanValue i=new BooleanValue();
+		String value = defaultArgs.size() > key ? defaultArgs.get(key) : "";
+		BooleanValue i = new BooleanValue();
 		i.set(value);
 		return i;
 	}
 
 	/**
 	 * 得到布尔值
+	 * 
 	 * @param key
 	 * @return
 	 */
@@ -266,6 +337,7 @@ public class Args {
 
 	/**
 	 * 获得第n个参数,如果没有该参数抛出异常
+	 * 
 	 * @deprecated
 	 * @param index 从0开始
 	 * @param name
@@ -280,6 +352,7 @@ public class Args {
 
 	/**
 	 * 获得第n个参数,如果没有该参数返回null
+	 * 
 	 * @deprecated
 	 * @param index 从0开始
 	 * @return
@@ -369,5 +442,17 @@ public class Args {
 	@Override
 	public String toString() {
 		return defaultArgs + argMap.toString();
+	}
+
+	/**
+	 * 获得所有的匿名参数
+	 * @return
+	 */
+	public List<String> getAnonymousArgs() {
+		if (firstArgAsCmd) {
+			return defaultArgs.subList(1, defaultArgs.size());
+		} else {
+			return Collections.unmodifiableList(defaultArgs);
+		}
 	}
 }
