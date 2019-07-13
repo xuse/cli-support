@@ -25,10 +25,10 @@ import javax.management.remote.JMXServiceURL;
 
 import com.github.xuse.jmxspy.AbstractCommand;
 import com.github.xuse.jmxspy.beans.JavaLang;
-import com.github.xuse.jmxspy.util.Args;
 import com.github.xuse.jmxspy.util.StringUtils;
 import com.github.xuse.jmxspy.util.Threads;
 import com.github.xuse.jmxspy.util.ZipUtils;
+import com.github.xuse.jmxspy.util.args.Args;
 import com.sun.management.ThreadMXBean;
 
 public class StackCommand extends AbstractCommand{
@@ -48,9 +48,9 @@ public class StackCommand extends AbstractCommand{
 	public void run(Args args) throws Exception {
 		String url = args.getDefaultOrThrow(0,"Connect host:port");
 		String filebase = args.getOrThrow("f", "filename(-f)");
-		int count = args.getIntWithAbbrev("count", 2);
-		String user = args.getWithAbbrev("user",null);
-		String password = args.getWithAbbrev("password", null);
+		int count = args.getInt("count").abbrev().defaultIs(2).get();
+		String user = args.get("user").abbrev().get();
+		String password = args.get("password").abbrev().get();
 //		boolean zip=args.containsAny("z","zip");
 		
 		JMXConnector connector = getConnection(url, user, password);

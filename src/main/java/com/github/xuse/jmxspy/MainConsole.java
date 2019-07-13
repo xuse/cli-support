@@ -18,9 +18,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import com.github.xuse.jmxspy.util.Args;
 import com.github.xuse.jmxspy.util.IOUtils;
 import com.github.xuse.jmxspy.util.StringUtils;
+import com.github.xuse.jmxspy.util.args.Args;
 
 public class MainConsole implements ExtensionContext {
 	private static final String PROMPT = "Alarm>";
@@ -109,7 +109,7 @@ public class MainConsole implements ExtensionContext {
 				} else if ("env load".equalsIgnoreCase(s)) {
 					loadEnv();
 				} else {
-					LinkedList<String> argss = spliteToken(s, ' ');
+					LinkedList<String> argss = Args.spliteToken(s, ' ');
 					if (argss.isEmpty()) {
 						continue;
 					}
@@ -193,41 +193,6 @@ public class MainConsole implements ExtensionContext {
 
 	public void error(String string) {
 		System.err.println(string);
-	}
-
-	public static final LinkedList<String> spliteToken(String text, char de) {
-		LinkedList<String> tokens = new LinkedList<String>();
-		if (text == null || text.length() == 0) {
-			return tokens;
-		}
-		int total = text.length();
-		int begin = 0;
-		boolean inQuote = false;
-		for (int i = 0; i < total; i++) {
-			char c = text.charAt(i);
-			if (c == de && !inQuote) {
-				int len = i - begin;
-				if (len > 0) {
-					tokens.add(text.substring(begin, i));
-				}
-				begin = i + 1;
-			} else if (c == '"') {
-				if (inQuote) {
-					int len = i - begin;
-					if (len > 0) {
-						tokens.add(text.substring(begin, i));
-					}
-					inQuote = false;
-				} else {
-					inQuote = true;
-				}
-				begin = i + 1;
-			}
-		}
-		if (begin < total) {
-			tokens.add(text.substring(begin, total));
-		}
-		return tokens;
 	}
 
 	@Override

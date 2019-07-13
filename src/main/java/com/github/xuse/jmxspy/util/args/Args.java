@@ -1,14 +1,17 @@
-package com.github.xuse.jmxspy.util;
+package com.github.xuse.jmxspy.util.args;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import com.github.xuse.jmxspy.util.StringUtils;
 
 public class Args {
 
 	private Map<String, String> argMap = new HashMap<String, String>();
-	private List<String> defaultArgs=new ArrayList<>();
+	private List<String> defaultArgs = new ArrayList<>();
 	private String[] args;
 
 	public Args(String[] args) {
@@ -43,66 +46,72 @@ public class Args {
 		String value = argMap.get(key);
 		return value == null ? defaultValue : value;
 	}
-	
+
 	/**
 	 * 获得参数，如果传入的是一个单词，那么还会检索首字母的缩写配置
+	 * @deprecated
 	 * @param key
 	 * @param defaultValue
 	 * @return
 	 */
 	public String getWithAbbrev(String key, String defaultValue) {
 		String value = argMap.get(key);
-		if(value==null && key.length()>1) {
-			String firstChar=key.substring(0,1);
+		if (value == null && key.length() > 1) {
+			String firstChar = key.substring(0, 1);
 			value = argMap.get(firstChar);
 		}
 		return value == null ? defaultValue : value;
 	}
-	
+
 	/**
-	 * 获得默认参数	
+	 * 获得默认参数
+	 * @deprecated
 	 * @return
 	 */
 	public String getFirstDefault() {
-		return defaultArgs.isEmpty()? null: defaultArgs.get(0);
+		return defaultArgs.isEmpty() ? null : defaultArgs.get(0);
 	}
 
 	/**
 	 * 获得默认参数
+	 * @deprecated
 	 * @param index
 	 * @return
 	 */
 	public String getDefault(int index) {
-		return defaultArgs.size()>index? defaultArgs.get(index):null;
+		return defaultArgs.size() > index ? defaultArgs.get(index) : null;
 	}
-	
+
 	/**
 	 * 获得缺省参数
+	 * 
 	 * @param index
 	 * @param msg
 	 * @return
 	 */
 	public String getDefaultOrThrow(int index, String msg) {
-		String v=getDefault(index);
-		if(StringUtils.isEmpty(v)) {
-			throw new IllegalArgumentException("未指定参数"+msg);
+		String v = getDefault(index);
+		if (StringUtils.isEmpty(v)) {
+			throw new IllegalArgumentException("未指定参数" + msg);
 		}
 		return v;
-		
+
 	}
+
 	/**
 	 * 获得参数，如果没有则抛出一异常
+	 * 
 	 * @param key
 	 * @param msg
 	 * @return
 	 */
 	public String getOrThrow(String key, String msg) {
 		String value = argMap.get(key);
-		if(StringUtils.isEmpty(value)) {
-			throw new IllegalArgumentException("未指定参数"+msg);
+		if (StringUtils.isEmpty(value)) {
+			throw new IllegalArgumentException("未指定参数" + msg);
 		}
 		return value;
-		
+
 	}
 
 	/**
@@ -119,15 +128,15 @@ public class Args {
 
 	/**
 	 * 获得Int类型参数，支持缩写
-	 * 
+	 * @deprecated
 	 * @param key
 	 * @param defaultValue
 	 * @return
 	 */
 	public int getIntWithAbbrev(String key, int defaultValue) {
 		String value = argMap.get(key);
-		if(StringUtils.isEmpty(value) && key.length()>1) {
-			String firstChar=key.substring(0,1);
+		if (StringUtils.isEmpty(value) && key.length() > 1) {
+			String firstChar = key.substring(0, 1);
 			value = argMap.get(firstChar);
 		}
 		if (StringUtils.isEmpty(value)) {
@@ -139,6 +148,103 @@ public class Args {
 			return defaultValue;
 		}
 	}
+
+	public class AbbrevArg<T extends AbstractArg> {
+		private String key;
+		private T rawArg;
+
+		/**
+		 * 直接获得参数
+		 * @return
+		 */
+		public T get() {
+			rawArg.set(argMap.get(key));
+			return rawArg;
+		}
+
+		/**
+		 * 支持按首字母缩写获取参数
+		 * @return
+		 */
+		public T abbrev() {
+			String value = argMap.get(key);
+			if (StringUtils.isEmpty(value) && key.length() > 1) {
+				String firstChar = key.substring(0, 1);
+				value = argMap.get(firstChar);
+			}
+			rawArg.set(value);
+			return rawArg;
+		}
+
+		AbbrevArg(String key, T getter) {
+			this.key = key;
+			this.rawArg = getter;
+		}
+	}
+
+	/**
+	 * 得到整数值
+	 * @param key
+	 * @return
+	 */
+	public IntValue getInt(int key) {
+		String value=defaultArgs.size()>key? defaultArgs.get(key):null;
+		IntValue i=new IntValue();
+		i.set(value);
+		return i;
+	}
+
+	/**
+	 * 得到整数值
+	 * @param key
+	 * @return
+	 */
+	public AbbrevArg<IntValue> getInt(String key) {
+		return new AbbrevArg<>(key, new IntValue());
+	}
+
+	/**
+	 * 得到字符串值
+	 * @param key
+	 * @return
+	 */
+	public StringValue get(int key) {
+		String value=defaultArgs.size()>key? defaultArgs.get(key):null;
+		StringValue i=new StringValue();
+		i.set(value);
+		return i;
+	}
+
+	/**
+	 * 得到字符串值
+	 * @param key
+	 * @return
+	 */
+	public AbbrevArg<StringValue> get(String key) {
+		return new AbbrevArg<>(key, new StringValue());
+	}
+
+	/**
+	 * 得到布尔值
+	 * @param key
+	 * @return
+	 */
+	public BooleanValue getBoolean(int key) {
+		String value=defaultArgs.size()>key? defaultArgs.get(key):null;
+		BooleanValue i=new BooleanValue();
+		i.set(value);
+		return i;
+	}
+
+	/**
+	 * 得到布尔值
+	 * @param key
+	 * @return
+	 */
+	public AbbrevArg<BooleanValue> getBoolean(String key) {
+		return new AbbrevArg<>(key, new BooleanValue());
+	}
+
 	/**
 	 * 获得Int类型参数
 	 * 
@@ -160,7 +266,7 @@ public class Args {
 
 	/**
 	 * 获得第n个参数,如果没有该参数抛出异常
-	 * 
+	 * @deprecated
 	 * @param index 从0开始
 	 * @param name
 	 * @return
@@ -174,7 +280,7 @@ public class Args {
 
 	/**
 	 * 获得第n个参数,如果没有该参数返回null
-	 * 
+	 * @deprecated
 	 * @param index 从0开始
 	 * @return
 	 */
@@ -209,15 +315,59 @@ public class Args {
 				}
 			}
 		}
-		if(lastKey!=null) {
+		if (lastKey != null) {
 			argMap.put(lastKey, "");
 		}
 	}
 
 	public static void main(String[] args) {
-		String[] s = new String[] { "tail", "-l20", "-f", "--name", "c:\\asadsad\\file.exe", "-c", "utf-8", "main arg" ,"-k"};
+		String[] s = new String[] { "tail", "-l20", "-f", "--name", "c:\\asadsad\\file.exe", "-c", "utf-8", "main arg", "-k" };
 		Args ag = new Args(s);
 		System.out.println(ag.argMap);
+	}
 
+	public static final LinkedList<String> spliteToken(String text, char de) {
+		LinkedList<String> tokens = new LinkedList<String>();
+		if (text == null || text.length() == 0) {
+			return tokens;
+		}
+		int total = text.length();
+		int begin = 0;
+		boolean inQuote = false;
+		for (int i = 0; i < total; i++) {
+			char c = text.charAt(i);
+			if (c == de && !inQuote) {
+				int len = i - begin;
+				if (len > 0) {
+					tokens.add(text.substring(begin, i));
+				}
+				begin = i + 1;
+			} else if (c == '"') {
+				if (inQuote) {
+					int len = i - begin;
+					if (len > 0) {
+						tokens.add(text.substring(begin, i));
+					}
+					inQuote = false;
+				} else {
+					inQuote = true;
+				}
+				begin = i + 1;
+			}
+		}
+		if (begin < total) {
+			tokens.add(text.substring(begin, total));
+		}
+		return tokens;
+	}
+
+	public static Args of(String command) {
+		LinkedList<String> args = spliteToken(command, ' ');
+		return new Args(args.toArray(new String[args.size()]));
+	}
+
+	@Override
+	public String toString() {
+		return defaultArgs + argMap.toString();
 	}
 }

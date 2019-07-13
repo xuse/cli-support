@@ -2,7 +2,7 @@ package com.github.xuse.jmxspy;
 
 import java.util.Map;
 
-import com.github.xuse.jmxspy.util.Args;
+import com.github.xuse.jmxspy.util.args.Args;
 
 public interface Command {
 
