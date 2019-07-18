@@ -434,9 +434,9 @@ public class Args {
 		return tokens;
 	}
 
-	public static Args of(String command) {
+	public static Args of(String command, boolean hasCommand) {
 		LinkedList<String> args = spliteToken(command, ' ');
-		return new Args(args.toArray(new String[args.size()]));
+		return new Args(args.toArray(new String[args.size()]),hasCommand);
 	}
 
 	@Override
