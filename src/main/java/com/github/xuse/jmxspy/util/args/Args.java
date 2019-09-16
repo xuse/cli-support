@@ -1,6 +1,7 @@
 package com.github.xuse.jmxspy.util.args;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -60,17 +61,17 @@ public class Args {
 		return argMap.size();
 	}
 
-	public Args(String[] args, boolean firstAsCmd) {
+	public Args(String[] args, boolean firstAsCmd,Collection<String> noValueArgs) {
 		this.args = args;
 		this.firstArgAsCmd = firstAsCmd;
-		initArg();
+		initArg(noValueArgs);
 		if (firstAsCmd && defaultArgs.isEmpty()) {
 			throw new IllegalArgumentException("No command found.");
 		}
 	}
 
 	public Args(String[] args) {
-		this(args, false);
+		this(args, false,Collections.emptySet());
 	}
 
 	/**
@@ -365,7 +366,7 @@ public class Args {
 	}
 
 	// 命令行参数解析
-	private void initArg() {
+	private void initArg(Collection<String> noValueArgs) {
 		String lastKey = null;
 		for (String s : args) {
 			String key = null;
@@ -373,6 +374,10 @@ public class Args {
 				key = s.substring(2);
 			} else if (s.startsWith("-")) {
 				key = s.substring(1);
+			}
+			if(key!=null && noValueArgs.contains(key)) {
+				argMap.put(key, "");
+				continue;
 			}
 			if (key != null) {
 				if (lastKey != null) {
@@ -397,6 +402,7 @@ public class Args {
 		String[] s = new String[] { "tail", "-l20", "-f", "--name", "c:\\asadsad\\file.exe", "-c", "utf-8", "main arg", "-k" };
 		Args ag = new Args(s);
 		System.out.println(ag.argMap);
+		System.out.println(ag.defaultArgs);
 	}
 
 	public static final LinkedList<String> spliteToken(String text, char de) {
@@ -433,10 +439,14 @@ public class Args {
 		}
 		return tokens;
 	}
-
+	
 	public static Args of(String command, boolean hasCommand) {
+		return of(command,hasCommand,Collections.emptySet());
+	}
+			
+	public static Args of(String command, boolean hasCommand,Collection<String> noValueArgs) {
 		LinkedList<String> args = spliteToken(command, ' ');
-		return new Args(args.toArray(new String[args.size()]),hasCommand);
+		return new Args(args.toArray(new String[args.size()]),hasCommand,noValueArgs);
 	}
 
 	@Override
