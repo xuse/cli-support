@@ -9,7 +9,6 @@ public class StringValue extends AbstractArg<StringValue> {
 		return StringUtils.isEmpty(value);
 	}
 	
-	
 	public StringValue defaultIs(String value) {
 		if (StringUtils.isEmpty(this.value)) {
 			this.value = value;
@@ -39,6 +38,18 @@ public class StringValue extends AbstractArg<StringValue> {
 		this.argName = argName;
 		return this;
 	}
+	
+	/**
+	 * 获得值，如果无有效内容返回null
+	 * @return
+	 */
+	public String trimToNull() {
+		if(value==null) {
+			return null;
+		}
+		return StringUtils.trimToNull(value);
+	}
+	
 
 	public String get() {
 		return value;

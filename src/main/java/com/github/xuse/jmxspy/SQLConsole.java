@@ -22,37 +22,28 @@ import com.github.xuse.jmxspy.util.IOUtils;
 import com.github.xuse.jmxspy.util.StringUtils;
 import com.github.xuse.jmxspy.util.args.Args;
 
-public class MainConsole implements ExtensionContext {
-	private static final String PROMPT = "Alarm>";
+public class SQLConsole implements ExtensionContext {
+
+	private static final String PROMPT = "SQL>";
 	private final Map<String, String> env = new LinkedHashMap<>();
 	private final File root;
 	private final Map<String, Command> extension = new HashMap<String, Command>();
-	private final Map<String, String> alias = new HashMap<String, String>();
 
 	public static void main(String[] args) throws IOException {
-		MainConsole console = new MainConsole();
+		SQLConsole console = new SQLConsole();
 		console.start();
 	}
 
-	public MainConsole() throws IOException {
+	public SQLConsole() throws IOException {
 		this.root = new File(System.getProperty("user.dir"));
-		loadEnv();
-		initExtenstion();
 	}
 
 	private void loadEnv() throws IOException {
 		File config = new File(root, "settings.properties");
 		if (config.exists()) {
-			load(config.toURI().toURL(),env);
+			load(config.toURI().toURL());
 		} else {
-			load(this.getClass().getResource("/settings.properties"),env);
-		}
-		
-		config = new File(root, "alias.properties");
-		if (config.exists()) {
-			load(config.toURI().toURL(),alias);
-		} else {
-			load(this.getClass().getResource("/alias.properties"),alias);
+			load(this.getClass().getResource("/settings.properties"));
 		}
 	}
 
@@ -83,11 +74,9 @@ public class MainConsole implements ExtensionContext {
 		}
 	}
 
-	private void load(URL url,Map<String,String> map) throws IOException {
+	private void load(URL url) throws IOException {
 		if (url == null) {
-			System.out.println("No Settings");
-//			throw new IOException("No settings.");
-			return;
+			throw new IOException("No settings.");
 		}
 		System.out.println("Loading config:" + url);
 		Properties p = new Properties();
@@ -95,52 +84,61 @@ public class MainConsole implements ExtensionContext {
 			p.load(new InputStreamReader(in, StringUtils.UTF8));
 		}
 		for (Map.Entry<Object, Object> e : p.entrySet()) {
-			map.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
+			env.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
 		}
 	}
 
 	private void start() throws IOException {
 		InputStream in = System.in;
+		StringBuilder sb = new StringBuilder();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
 			String s;
 			System.out.print(PROMPT);
 			while ((s = reader.readLine()) != null) {
 				s = s.trim();
-				if (StringUtils.isEmpty(s)) {
-					continue;
-				}
 				if ("q".equalsIgnoreCase(s) || "exit".equals(s)) {
 					break;
 				}
-				if ("help".equalsIgnoreCase(s)) {
-					help();
-				} else if ("env".equalsIgnoreCase(s)) {
-					showEnv();
-				} else if ("env load".equalsIgnoreCase(s)) {
-					loadEnv();
-				} else {
-					//按照空格拆分多个参数
-					LinkedList<String> argss = Args.spliteToken(s, ' ');
-					if (argss.isEmpty()) {
-						continue;
-					}
-					String command = argss.removeFirst();
-					String alias=this.alias.get(command);
-					if(StringUtils.isNotEmpty(alias)) {
-						LinkedList<String> aliasCmd = Args.spliteToken(alias, ' ');
-						argss.addAll(0, aliasCmd);
-						command=argss.removeFirst();
-					}
-					try {
-						executeCommand(command, argss.toArray(new String[argss.size()]));
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+				if(sb.length()>0) {
+					sb.append("\n");
 				}
+				sb.append(s);
+				if (s.endsWith(";") || s.endsWith("/") || StringUtils.isEmpty(s)) {
+					if (sb.length() > 0) {
+						doSql(sb.toString());
+						sb.setLength(0);
+					}
+
+				}
+
 				System.out.print(PROMPT);
 			}
 			System.out.println("Bye bye!");
 		}
+	}
+
+	private void doSql(String s) {
+		int index = s.indexOf('[');
+		if(index<0) {
+			System.out.println("没有参数." + index);
+			return;
+		}
+		String sql = s.substring(0, index);
+		String args = s.substring(index + 1, s.length());
+		args=StringUtils.substringBeforeLast(args, "]");
+
+		LinkedList<String> arg = new LinkedList<>(Arrays.asList(StringUtils.split(args, ',')));
+
+		index = sql.indexOf('?');
+
+		while (index > -1 && !arg.isEmpty()) {
+			String param = arg.removeFirst();
+			param = param.replace('"', '\'');
+			sql=StringUtils.replaceOnce(sql, "?", param);
+			index = sql.indexOf('?');
+		}
+		System.err.println(sql);
+
 	}
 
 	private void help() {
@@ -250,7 +248,7 @@ public class MainConsole implements ExtensionContext {
 	@Override
 	public BufferedWriter getWriter(String fileName) {
 		File file = new File(root, fileName);
-		file=IOUtils.escapeExistFile(file);
+		file = IOUtils.escapeExistFile(file);
 		try {
 			return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 		} catch (IOException e) {

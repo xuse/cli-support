@@ -20,7 +20,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class StringUtils {
+public final class StringUtils extends org.apache.commons.lang3.StringUtils{
 	public static final byte CR = 0x0D;
 	public static final byte LF = 0x0A;
 	public static final byte[] CRLF = { CR, LF };

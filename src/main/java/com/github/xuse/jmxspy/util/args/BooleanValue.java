@@ -26,6 +26,17 @@ public class BooleanValue extends AbstractArg<BooleanValue> {
 			b = "true".equalsIgnoreCase(value);
 		}
 	}
+	
+	/**
+	 * 获得配置值
+	 * @return
+	 */
+	public boolean get() {
+		if (b == null) {
+			throw new IllegalArgumentException(getName() + " is null!");
+		}
+		return b;
+	}
 
 	/**
 	 * 设置参数名称，一般用在断言之前

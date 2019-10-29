@@ -92,7 +92,7 @@ public class Args {
 	/**
 	 * 获得参数
 	 * 
-	 * @param key
+	 * @param key 第一个参数是0，参数从0开始。
 	 * @param defaultValue
 	 * @return
 	 */
@@ -272,7 +272,7 @@ public class Args {
 
 	/**
 	 * 得到字符串值
-	 * 
+	 * 参数从0开始。
 	 * @param key
 	 * @return
 	 */
