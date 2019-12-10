@@ -24,10 +24,17 @@ import com.github.xuse.jmxspy.util.args.Args;
 
 public class MainConsole implements ExtensionContext {
 	private static final String PROMPT = "Alarm>";
+	
+	/**
+	 * 环境上下文
+	 */
 	private final Map<String, String> env = new LinkedHashMap<>();
+	/**
+	 * 所有的别名
+	 */
+	private final Map<String, String> alias = new HashMap<String, String>();
 	private final File root;
 	private final Map<String, Command> extension = new HashMap<String, Command>();
-	private final Map<String, String> alias = new HashMap<String, String>();
 
 	public static void main(String[] args) throws IOException {
 		MainConsole console = new MainConsole();
@@ -116,8 +123,14 @@ public class MainConsole implements ExtensionContext {
 					help();
 				} else if ("env".equalsIgnoreCase(s)) {
 					showEnv();
+				} else if ("alias".equalsIgnoreCase(s)) {
+					showAlias();
 				} else if ("env load".equalsIgnoreCase(s)) {
 					loadEnv();
+				} else if (s.startsWith("env ")) {
+					showEnv(s.substring(4).trim());
+				} else if(s.startsWith("set ")){
+					setEnv(s.substring(4).trim());
 				} else {
 					//按照空格拆分多个参数
 					LinkedList<String> argss = Args.spliteToken(s, ' ');
@@ -141,6 +154,37 @@ public class MainConsole implements ExtensionContext {
 			}
 			System.out.println("Bye bye!");
 		}
+	}
+
+	private void showEnv(String key) {
+		String value=env.get(key);
+		if(StringUtils.isEmpty(value)) {
+			System.out.println("["+key+"]没有设置");
+		}else {
+			System.out.println("["+key+"]="+value);
+		}
+	}
+
+	private void setEnv(String s) {
+		int index=s.indexOf('=');
+		if(index<0) {
+			throw new IllegalArgumentException("请输入  key=value 格式。");
+		}
+		String key=s.substring(0,index);
+		String value=s.substring(index+1);
+		String oldValue=this.env.put(key, value);
+		if(StringUtils.isEmpty(oldValue)) {
+			System.out.println("变量 ["+key+"]="+value+" 已设置");
+		}else {
+			System.out.println("变量 ["+key+"]变更 "+oldValue+" -> "+value);
+		}
+	}
+
+	private void showAlias() {
+		for (Map.Entry<String, String> entry : alias.entrySet()) {
+			System.out.println(StringUtils.toFixLengthString(entry.getKey(), 16, false, ' ') + "\t" + entry.getValue());
+		}
+		
 	}
 
 	private void help() {

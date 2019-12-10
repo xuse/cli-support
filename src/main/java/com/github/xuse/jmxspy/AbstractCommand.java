@@ -11,7 +11,15 @@ public abstract class AbstractCommand implements Command {
 	}
 
 	protected String getGlobal(String key) {
-		return context.getProperty(key);
+		return getGlobal(key,null);
+		
+	}
+	protected String getGlobal(String key,String defaultValue) {
+		String value=context.getProperty(key);
+		if(StringUtils.isEmpty(value)) {
+			return defaultValue;
+		}
+		return value;
 	}
 	
 	
